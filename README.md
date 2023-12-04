@@ -3,7 +3,7 @@ This is an (unofficial) PyTorch implementation of VMAF (Video Multi-Method Asses
 ## Installation
 ```
 git clone https://rnd-gitlab-msc.huawei.com/cloud-bu-algorithm-common-project/multimedia-data-reduction/vmaf-torch
-cd vmaf_torch
+cd vmaf-torch
 pip install -r requirements.txt
 python setup.py develop
 ```
@@ -13,6 +13,7 @@ Initialize
 from vmaf_torch import VMAF
 vmaf = VMAF()                            # init vmaf class
 vmaf = vmaf.to(device)                   # move internal tensors to GPU
+vmaf = vmaf.compile()                    # optionally use .compile() for ~15-20% inference speed up, requires torch>=2.0, first pass might take ~30 seconds
 ```
 Load yuv files
 ```
