@@ -41,7 +41,8 @@ vmaf.compute_motion(ref)
 
 ## Difference with official implementation
 
-We tried to reproduce all details of the original implementation, however some difference in outputs is possible due to the fact that the original uses quantized integer values and this implementation uses floats 
+We tried to reproduce all details of the original implementation, however some difference in outputs is possible due to the fact that the original uses quantized integer values and this implementation uses floats.
+
 Comparing with [the official Netflix implementation](https://github.com/Netflix/vmaf) on [Netflix Public Dataset](https://github.com/Netflix/vmaf/blob/master/resource/doc/datasets.md) that includes 79 video streams (using first 50 frames from each video): 
 
 ![Comparison](score_comparison.png)
