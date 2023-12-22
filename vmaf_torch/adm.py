@@ -237,17 +237,13 @@ class ADM(torch.nn.Module):
         bottom = height - top
 
         # eq. (18), compute thresholds
-        # same padding as in c code
-        csf_A_h = F.pad(csf_A_h, (1, 0, 1, 0), mode='reflect')
-        csf_A_h = F.pad(csf_A_h, (0, 1, 0, 1), mode='replicate')
+        csf_A_h = vmaf_pad(csf_A_h, (1, 1, 1, 1))
         thr_h = F.conv2d(torch.abs(csf_A_h), self.cm_kernel, padding="valid")
 
-        csf_A_v = F.pad(csf_A_v, (1, 0, 1, 0), mode='reflect')
-        csf_A_v = F.pad(csf_A_v, (0, 1, 0, 1), mode='replicate')
+        csf_A_v = vmaf_pad(csf_A_v, (1, 1, 1, 1))
         thr_v = F.conv2d(torch.abs(csf_A_v), self.cm_kernel, padding="valid")
 
-        csf_A_d = F.pad(csf_A_d, (1, 0, 1, 0), mode='reflect')
-        csf_A_d = F.pad(csf_A_d, (0, 1, 0, 1), mode='replicate')
+        csf_A_d = vmaf_pad(csf_A_d, (1, 1, 1, 1))
         thr_d = F.conv2d(torch.abs(csf_A_d), self.cm_kernel, padding="valid")
 
         # do not use coefs on the border of the image

@@ -30,31 +30,25 @@ def vmaf_pad(input, pad):
     padding_left, padding_right, padding_top, padding_bottom = pad
     w = input.shape[-1]
     h = input.shape[-2]
-    # pad right
-    if padding_right > 0:
-        padded = F.pad(input, (0, padding_right-1, 0, 0), mode='reflect')                               # make abcdef|ed
-        padded = torch.cat((padded[:, :, :, :w], padded[:, :, :, w-1:w], padded[:, :, :, w:]), dim=-1)  # insert f manually so we have abcdef|fed
+    if padding_left <= 1 and padding_right <= 1 and padding_top <= 1 and padding_bottom <= 1:
+        padded = F.pad(input, (padding_left, 0, padding_top, 0), mode='reflect')
+        padded = F.pad(padded, (0, padding_right, 0, padding_bottom), mode='replicate')
     else:
-        padded = input
-    # pad left
-    padded = F.pad(padded, (padding_left, 0, 0, 0), mode='reflect')
-    # pad bottom
-    if padding_bottom > 0:
-        padded = F.pad(padded, (0, 0, 0, padding_bottom-1), mode='reflect')
-        padded = torch.cat((padded[:, :, :h, :], padded[:, :, h-1:h, :], padded[:, :, h:, :]), dim=-2)
-    # pad top
-    padded = F.pad(padded, (0, 0, padding_top, 0), mode='reflect')
+        # pad right
+        if padding_right > 0:
+            padded = F.pad(input, (0, padding_right-1, 0, 0), mode='reflect')                               # make abcdef|ed
+            padded = torch.cat((padded[:, :, :, :w], padded[:, :, :, w-1:w], padded[:, :, :, w:]), dim=-1)  # insert f manually so we have abcdef|fed
+        else:
+            padded = input
+        # pad left
+        padded = F.pad(padded, (padding_left, 0, 0, 0), mode='reflect')
+        # pad bottom
+        if padding_bottom > 0:
+            padded = F.pad(padded, (0, 0, 0, padding_bottom-1), mode='reflect')
+            padded = torch.cat((padded[:, :, :h, :], padded[:, :, h-1:h, :], padded[:, :, h:, :]), dim=-2)
+        # pad top
+        padded = F.pad(padded, (0, 0, padding_top, 0), mode='reflect')
     return padded
-
-
-def gaussian_filter(x, win, padding='reflect'):
-    kernel_size = win.shape[-1]
-    if padding == 'vmaf':
-        x_padded = vmaf_pad(x, [(kernel_size-1)//2]*4)
-    else:
-        x_padded = F.pad(x, [(kernel_size-1)//2]*4, mode='reflect')
-    out = F.conv2d(x_padded, weight=win)
-    return out
 
 
 def yuv_to_tensor(yuv_path, width, height, num_frames, channel='y'):
