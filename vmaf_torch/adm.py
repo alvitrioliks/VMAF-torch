@@ -196,20 +196,16 @@ class ADM(torch.nn.Module):
 
         rfactor = self.rfactors[scale]
 
-        # c code doesnt use coefs on the border of the image
+        # do not use coefs on the border of the image
         # perform CSF on O
         abs_csf_o_val_h = torch.abs(rfactor[0] * O_h[:, :, top:bottom, left:right])
         abs_csf_o_val_v = torch.abs(rfactor[1] * O_v[:, :, top:bottom, left:right])
         abs_csf_o_val_d = torch.abs(rfactor[2] * O_d[:, :, top:bottom, left:right])
 
         # perform Minkowski pooling with p=3
-        accum_h = torch.sum(abs_csf_o_val_h**3, dim=(-1, -2))
-        accum_v = torch.sum(abs_csf_o_val_v**3, dim=(-1, -2))
-        accum_d = torch.sum(abs_csf_o_val_d**3, dim=(-1, -2))
-
-        den_scale_h = torch.pow(accum_h, 1./3.)
-        den_scale_v = torch.pow(accum_v, 1./3.)
-        den_scale_d = torch.pow(accum_d, 1./3.)
+        den_scale_h = torch.linalg.vector_norm(abs_csf_o_val_h, 3, dim=(-1, -2))
+        den_scale_v = torch.linalg.vector_norm(abs_csf_o_val_v, 3, dim=(-1, -2))
+        den_scale_d = torch.linalg.vector_norm(abs_csf_o_val_d, 3, dim=(-1, -2))
 
         den_scale_h += torch.pow((bottom-top)*(right-left)/32., 1./3.)
         den_scale_v += torch.pow((bottom-top)*(right-left)/32., 1./3.)
@@ -254,7 +250,7 @@ class ADM(torch.nn.Module):
         csf_A_d = F.pad(csf_A_d, (0, 1, 0, 1), mode='replicate')
         thr_d = F.conv2d(torch.abs(csf_A_d), self.cm_kernel, padding="valid")
 
-        # c code doesnt use coefs on the border of the image
+        # do not use coefs on the border of the image
         csf_A_h = csf_A_h[:, :, top:bottom, left:right]
         csf_A_v = csf_A_v[:, :, top:bottom, left:right]
         csf_A_d = csf_A_d[:, :, top:bottom, left:right]
@@ -275,13 +271,9 @@ class ADM(torch.nn.Module):
         xd = F.relu(torch.abs(R_d * rfactor[2]) - thr)
 
         # perform Minkowski pooling with p=3
-        accum_h = torch.sum(xh**3, dim=(-1, -2))
-        accum_v = torch.sum(xv**3, dim=(-1, -2))
-        accum_d = torch.sum(xd**3, dim=(-1, -2))
-
-        num_scale_h = torch.pow(accum_h, 1./3.)
-        num_scale_v = torch.pow(accum_v, 1./3.)
-        num_scale_d = torch.pow(accum_d, 1./3.)
+        num_scale_h = torch.linalg.vector_norm(xh, 3, dim=(-1, -2))
+        num_scale_v = torch.linalg.vector_norm(xv, 3, dim=(-1, -2))
+        num_scale_d = torch.linalg.vector_norm(xd, 3, dim=(-1, -2))
 
         num_scale_h += torch.pow((bottom-top)*(right-left)/32., 1./3.)
         num_scale_v += torch.pow((bottom-top)*(right-left)/32., 1./3.)
