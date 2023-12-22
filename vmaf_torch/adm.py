@@ -18,7 +18,7 @@ class ADM(torch.nn.Module):
 
     def __init__(self, NEG=False):
         super().__init__()
-
+        self.scales = (0, 1, 2, 3)
         self.border_factor = 0.1
         self.rfactors = [[0.017382, 0.017382, 0.005891],
                          [0.031985, 0.031985, 0.014299],
@@ -50,17 +50,15 @@ class ADM(torch.nn.Module):
     def forward(self, X_ref, X_dst):
         return self.adm_score(X_ref, X_dst)  # only adm score is used as a feature for VMAF score regresion
 
-    def adm_features(self, X_ref, X_dst, scales=(0, 1, 2, 3)):
-        if type(scales) is int:
-            scales = (scales,)
-        num, den = self.adm_num_den(X_ref, X_dst, scales)
+    def adm_features(self, X_ref, X_dst):
+        num, den = self.adm_num_den(X_ref, X_dst)
         features = num/den
         return features               # [batch_size, num_scales]
 
     def adm_score(self, X_ref, X_dst):
         image_width = X_ref.shape[-1]
         image_height = X_ref.shape[-2]
-        num, den = self.adm_num_den(X_ref, X_dst, scales=(0, 1, 2, 3))
+        num, den = self.adm_num_den(X_ref, X_dst)
         num_sum = num.sum(dim=-1, keepdim=True)     # [batch_size, 1]
         den_sum = den.sum(dim=-1, keepdim=True)     # [batch_size, 1]
         numden_limit = 1e-10 * (image_width * image_height) / (1920 * 1080)
@@ -72,7 +70,7 @@ class ADM(torch.nn.Module):
     def adm_features_and_score(self, X_ref, X_dst):
         image_width = X_ref.shape[-1]
         image_height = X_ref.shape[-2]
-        num, den = self.adm_num_den(X_ref, X_dst, scales=(0, 1, 2, 3))
+        num, den = self.adm_num_den(X_ref, X_dst)
         num_sum = num.sum(dim=-1, keepdim=True)     # [batch_size, 1]
         den_sum = den.sum(dim=-1, keepdim=True)     # [batch_size, 1]
         numden_limit = 1e-10 * (image_width * image_height) / (1920 * 1080)
@@ -83,7 +81,7 @@ class ADM(torch.nn.Module):
         features = num/den
         return features, score
 
-    def adm_num_den(self, X_ref, X_dst, scales):
+    def adm_num_den(self, X_ref, X_dst):
         '''Compute ADM numerator and denominator for several scales'''
 
         assert len(X_ref.shape) == 4 and len(X_ref.shape) == 4, f'Expected tensors in [b,c,h,w] format, got {X_ref.shape} and {X_dst.shape}'
@@ -97,7 +95,7 @@ class ADM(torch.nn.Module):
         O_a = X_ref
         T_a = X_dst
 
-        for scale in scales:
+        for scale in self.scales:
 
             width = torch.tensor(image_width/(2**(scale+1))).ceil().long()
             height = torch.tensor(image_height/(2**(scale+1))).ceil().long()
@@ -213,14 +211,6 @@ class ADM(torch.nn.Module):
         den_scale_v = torch.pow(accum_v, 1./3.)
         den_scale_d = torch.pow(accum_d, 1./3.)
 
-        #den_scale_h = torch.linalg.vector_norm(abs_csf_o_val_h, 3, dim=(-1, -2))
-        #den_scale_v = torch.linalg.vector_norm(abs_csf_o_val_v, 3, dim=(-1, -2))
-        #den_scale_d = torch.linalg.vector_norm(abs_csf_o_val_d, 3, dim=(-1, -2))
-
-        #den_scale_h = torch.linalg.vector_norm(rfactor[0] * O_h[:, :, top:bottom, left:right], 3, dim=(-1, -2))
-        #den_scale_v = torch.linalg.vector_norm(rfactor[1] * O_v[:, :, top:bottom, left:right], 3, dim=(-1, -2))
-        #den_scale_d = torch.linalg.vector_norm(rfactor[2] * O_d[:, :, top:bottom, left:right], 3, dim=(-1, -2))
-
         den_scale_h += torch.pow((bottom-top)*(right-left)/32., 1./3.)
         den_scale_v += torch.pow((bottom-top)*(right-left)/32., 1./3.)
         den_scale_d += torch.pow((bottom-top)*(right-left)/32., 1./3.)
@@ -292,10 +282,6 @@ class ADM(torch.nn.Module):
         num_scale_h = torch.pow(accum_h, 1./3.)
         num_scale_v = torch.pow(accum_v, 1./3.)
         num_scale_d = torch.pow(accum_d, 1./3.)
-
-        #num_scale_h = torch.linalg.vector_norm(xh, 3, dim=(-1, -2))
-        #num_scale_v = torch.linalg.vector_norm(xv, 3, dim=(-1, -2))
-        #num_scale_d = torch.linalg.vector_norm(xd, 3, dim=(-1, -2))
 
         num_scale_h += torch.pow((bottom-top)*(right-left)/32., 1./3.)
         num_scale_v += torch.pow((bottom-top)*(right-left)/32., 1./3.)

@@ -30,7 +30,8 @@ class VIF(torch.nn.Module):
         self.sigma_nsq = 2
         self.sigma_max_inv = 4. / (255.*255.)
 
-        for scale in range(4):
+        self.scales = (0, 1, 2, 3)
+        for scale in self.scales:
             N = pow(2, 4 - scale) + 1
             win = gaussian_kernel(kernel_size=N, sigma=N/5)
             self.register_buffer(f'gaussian_kernel_{scale}', win)
@@ -38,27 +39,23 @@ class VIF(torch.nn.Module):
     def forward(self, ref, dist):
         return self.vif_features(ref, dist)  # all VIF features are used for VMAF score regresion
 
-    def vif_features(self, ref, dist, scales=(0, 1, 2, 3)):
-        if type(scales) is int:
-            scales = (scales,)
-        num, den = self.vif_num_den(ref, dist, scales)
+    def vif_features(self, ref, dist):
+        num, den = self.vif_num_den(ref, dist)
         features = num/den
         return features               # [batch_size, num_scales]
 
     def vif_score(self, ref, dist):
-        num, den = self.vif_num_den(ref, dist, scales=(0, 1, 2, 3))
+        num, den = self.vif_num_den(ref, dist)
         score = torch.sum(num, dim=-1)/torch.sum(den, dim=-1)
         return score                  # [batch_size]
 
-    def vif_features_and_score(self, ref, dist, scales=(0, 1, 2, 3)):
-        if type(scales) is int:
-            scales = (scales,)
-        num, den = self.vif_num_den(ref, dist, scales)
+    def vif_features_and_score(self, ref, dist):
+        num, den = self.vif_num_den(ref, dist)
         features = num/den
         score = torch.sum(num, dim=-1)/torch.sum(den, dim=-1)
         return features, score
 
-    def vif_num_den(self, ref, dist, scales):
+    def vif_num_den(self, ref, dist):
 
         assert len(ref.shape) == 4 and len(ref.shape) == 4, f'Expected tensors in [b,c,h,w] format, got {ref.shape} and {dist.shape}'
 
@@ -71,7 +68,7 @@ class VIF(torch.nn.Module):
         w = ref.shape[-1]
         h = ref.shape[-2]
 
-        for scale in scales:
+        for scale in self.scales:
 
             win = self.get_buffer(f'gaussian_kernel_{scale}')
             kernel_size = win.shape[-1]

@@ -96,9 +96,9 @@ class VMAF(torch.nn.Module):
         else:
             return torch.zeros((ref.shape[0], 1), device=ref.device, dtype=ref.dtype)
 
-    def compute_vif_features(self, ref, dist, scales=(0, 1, 2, 3)):
+    def compute_vif_features(self, ref, dist):
         """Compute one VIF feature for each scale"""
-        return self.vif.vif_features(ref, dist, scales)
+        return self.vif.vif_features(ref, dist)
 
     def compute_vif_score(self, ref, dist):
         """Compute VIF score using all 4 image scales"""
@@ -108,9 +108,9 @@ class VMAF(torch.nn.Module):
         """Compute VIF features and score (faster then calling individual functions due to computation sharing)"""
         return self.vif.vif_features_and_score(ref, dist)
 
-    def compute_adm_features(self, ref, dist, scales=(0, 1, 2, 3)):
+    def compute_adm_features(self, ref, dist):
         """Compute one ADM feature for each scale"""
-        return self.adm.adm_features(ref, dist, scales)
+        return self.adm.adm_features(ref, dist)
 
     def compute_adm_score(self, ref, dist):
         """Compute ADM score using all 4 image scales"""
