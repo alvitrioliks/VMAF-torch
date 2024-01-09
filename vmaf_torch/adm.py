@@ -207,11 +207,7 @@ class ADM(torch.nn.Module):
         den_scale_v = torch.linalg.vector_norm(abs_csf_o_val_v, 3, dim=(-1, -2))
         den_scale_d = torch.linalg.vector_norm(abs_csf_o_val_d, 3, dim=(-1, -2))
 
-        den_scale_h += torch.pow((bottom-top)*(right-left)/32., 1./3.)
-        den_scale_v += torch.pow((bottom-top)*(right-left)/32., 1./3.)
-        den_scale_d += torch.pow((bottom-top)*(right-left)/32., 1./3.)
-
-        den = den_scale_h + den_scale_v + den_scale_d
+        den = den_scale_h + den_scale_v + den_scale_d + 3*torch.pow((bottom-top)*(right-left)/32., 1./3.)
 
         return den  # [batch_size, 1]
 
@@ -271,10 +267,6 @@ class ADM(torch.nn.Module):
         num_scale_v = torch.linalg.vector_norm(xv, 3, dim=(-1, -2))
         num_scale_d = torch.linalg.vector_norm(xd, 3, dim=(-1, -2))
 
-        num_scale_h += torch.pow((bottom-top)*(right-left)/32., 1./3.)
-        num_scale_v += torch.pow((bottom-top)*(right-left)/32., 1./3.)
-        num_scale_d += torch.pow((bottom-top)*(right-left)/32., 1./3.)
-
-        num = num_scale_h + num_scale_v + num_scale_d
+        num = num_scale_h + num_scale_v + num_scale_d + 3*torch.pow((bottom-top)*(right-left)/32., 1./3.)
 
         return num  # [batch_size, 1]
