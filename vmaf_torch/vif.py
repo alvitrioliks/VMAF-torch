@@ -31,10 +31,11 @@ class VIF(torch.nn.Module):
         self.sigma_max_inv = 4. / (255.*255.)
 
         self.scales = (0, 1, 2, 3)
+        self.blur_windows = torch.nn.ParameterList()
         for scale in self.scales:
             N = pow(2, 4 - scale) + 1
             win = gaussian_kernel(kernel_size=N, sigma=N/5)
-            self.register_buffer(f'gaussian_kernel_{scale}', win)
+            self.blur_windows.append(torch.nn.Parameter(win, requires_grad=False))  # using parameters instead of buffers because there is no BufferList
 
     def forward(self, ref, dist):
         return self.vif_features(ref, dist)  # all VIF features are used for VMAF score regresion
@@ -70,7 +71,7 @@ class VIF(torch.nn.Module):
 
         for scale in self.scales:
 
-            win = self.get_buffer(f'gaussian_kernel_{scale}')
+            win = self.blur_windows[scale]
             kernel_size = win.shape[-1]
             pad_size = [(kernel_size-1)//2]*4
 
@@ -110,13 +111,13 @@ class VIF(torch.nn.Module):
             sv_sq = sigma2_sq - torch.multiply(g, sigma12)
 
             g = g.masked_fill(sigma1_sq < 1e-10, 0)
-            sv_sq[sigma1_sq < 1e-10] = sigma2_sq[sigma1_sq < 1e-10]
+            sv_sq = torch.where(sigma1_sq < 1e-10, sigma2_sq, sv_sq)
             sigma1_sq = sigma1_sq.masked_fill(sigma1_sq < 1e-10, 0)
 
             g = g.masked_fill(sigma2_sq < 1e-10, 0)
             sv_sq = sv_sq.masked_fill(sigma2_sq < 1e-10, 0)
 
-            sv_sq[g < 0] = sigma2_sq[g < 0]
+            sv_sq = torch.where(g < 0, sigma2_sq, sv_sq)
             g = F.relu(g)
             sv_sq = sv_sq.masked_fill(sv_sq <= 1e-10, 1e-10)
 
@@ -125,8 +126,8 @@ class VIF(torch.nn.Module):
             num_ar = torch.log2(1 + ((g**2) * sigma1_sq)/(sv_sq+self.sigma_nsq))
             den_ar = torch.log2(1 + sigma1_sq/self.sigma_nsq)
 
-            num_ar[sigma12 < 0] = 0
-            num_ar[sigma1_sq < self.sigma_nsq] = 1 - sigma2_sq[sigma1_sq < self.sigma_nsq] * self.sigma_max_inv
+            num_ar = num_ar.masked_fill(sigma12 < 0, 0)
+            num_ar = torch.where(sigma1_sq < self.sigma_nsq, 1 - sigma2_sq * self.sigma_max_inv, num_ar)
             den_ar = den_ar.masked_fill(sigma1_sq < self.sigma_nsq, 1)
 
             num.append(torch.sum(num_ar, dim=(-1, -2, -3)))

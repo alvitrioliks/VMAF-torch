@@ -14,7 +14,7 @@ Initialize
 from vmaf_torch import VMAF
 vmaf = VMAF()                            # init vmaf class
 vmaf = vmaf.to(device)                   # move internal tensors to GPU
-vmaf = vmaf.compile()                    # optionally use .compile() for ~15-20% inference speed up, requires torch>=2.0, first pass might take ~30 seconds
+vmaf = vmaf.compile()                    # optionally use .compile() for up to 30% inference speed up, requires torch>=2.0, first pass might take ~30 seconds
 ```
 Load yuv files
 ```

@@ -196,11 +196,14 @@ class ADM(torch.nn.Module):
 
         rfactor = self.rfactors[scale]
 
-        # do not use coefs on the border of the image
         # perform CSF on O
-        abs_csf_o_val_h = torch.abs(rfactor[0] * O_h[:, :, top:bottom, left:right])
-        abs_csf_o_val_v = torch.abs(rfactor[1] * O_v[:, :, top:bottom, left:right])
-        abs_csf_o_val_d = torch.abs(rfactor[2] * O_d[:, :, top:bottom, left:right])
+        # do not use coefs on the border of the image
+        # using a mask instead of indexing because it leads to graph breaks during torch.compile which slow down the computation
+        ind_hor, ind_vert = torch.arange(width, device=O_h.device), torch.arange(height, device=O_h.device)
+        border_mask = ((ind_hor < left) | (ind_hor >= right)).view(1, -1) | ((ind_vert < top) | (ind_vert >= bottom)).view(-1, 1)  # [height, width]
+        abs_csf_o_val_h = torch.abs(rfactor[0] * O_h.masked_fill(border_mask, 0))
+        abs_csf_o_val_v = torch.abs(rfactor[1] * O_v.masked_fill(border_mask, 0))
+        abs_csf_o_val_d = torch.abs(rfactor[2] * O_d.masked_fill(border_mask, 0))
 
         # perform Minkowski pooling with p=3
         den_scale_h = torch.linalg.vector_norm(abs_csf_o_val_h, 3, dim=(-1, -2))
@@ -233,27 +236,27 @@ class ADM(torch.nn.Module):
         bottom = height - top
 
         # eq. (18), compute thresholds
-        csf_A_h = vmaf_pad(csf_A_h, (1, 1, 1, 1))
-        thr_h = F.conv2d(torch.abs(csf_A_h), self.cm_kernel, padding="valid")
+        csf_A_h_padded = vmaf_pad(csf_A_h, (1, 1, 1, 1))
+        thr_h = F.conv2d(torch.abs(csf_A_h_padded), self.cm_kernel, padding="valid")
 
-        csf_A_v = vmaf_pad(csf_A_v, (1, 1, 1, 1))
-        thr_v = F.conv2d(torch.abs(csf_A_v), self.cm_kernel, padding="valid")
+        csf_A_v_padded = vmaf_pad(csf_A_v, (1, 1, 1, 1))
+        thr_v = F.conv2d(torch.abs(csf_A_v_padded), self.cm_kernel, padding="valid")
 
-        csf_A_d = vmaf_pad(csf_A_d, (1, 1, 1, 1))
-        thr_d = F.conv2d(torch.abs(csf_A_d), self.cm_kernel, padding="valid")
+        csf_A_d_padded = vmaf_pad(csf_A_d, (1, 1, 1, 1))
+        thr_d = F.conv2d(torch.abs(csf_A_d_padded), self.cm_kernel, padding="valid")
 
         # do not use coefs on the border of the image
-        csf_A_h = csf_A_h[:, :, top:bottom, left:right]
-        csf_A_v = csf_A_v[:, :, top:bottom, left:right]
-        csf_A_d = csf_A_d[:, :, top:bottom, left:right]
+        # using a mask instead of indexing because it leads to graph breaks during torch.compile which slow down the computation
+        ind_hor, ind_vert = torch.arange(width, device=R_h.device), torch.arange(height, device=R_h.device)
+        border_mask = ((ind_hor < left) | (ind_hor >= right)).view(1, -1) | ((ind_vert < top) | (ind_vert >= bottom)).view(-1, 1)  # [height, width]
 
-        thr_h = thr_h[:, :, top:bottom, left:right]
-        thr_v = thr_v[:, :, top:bottom, left:right]
-        thr_d = thr_d[:, :, top:bottom, left:right]
+        thr_h = thr_h.masked_fill(border_mask, 0)
+        thr_v = thr_v.masked_fill(border_mask, 0)
+        thr_d = thr_d.masked_fill(border_mask, 0)
 
-        R_h = R_h[:, :, top:bottom, left:right]
-        R_v = R_v[:, :, top:bottom, left:right]
-        R_d = R_d[:, :, top:bottom, left:right]
+        R_h = R_h.masked_fill(border_mask, 0)
+        R_v = R_v.masked_fill(border_mask, 0)
+        R_d = R_d.masked_fill(border_mask, 0)
 
         thr = thr_h + thr_v + thr_d
 
