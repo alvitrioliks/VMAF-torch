@@ -57,7 +57,7 @@ class VIF(torch.nn.Module):
 
     def vif_num_den(self, ref, dist):
 
-        assert len(ref.shape) == 4 and len(ref.shape) == 4, f'Expected tensors in [b,c,h,w] format, got {ref.shape} and {dist.shape}'
+        assert len(ref.shape) == 4 and len(dist.shape) == 4, f'Expected tensors in [b,c,h,w] format, got {ref.shape} and {dist.shape}'
 
         num = []
         den = []
@@ -74,7 +74,7 @@ class VIF(torch.nn.Module):
             kernel_size = win.shape[-1]
             pad_size = [(kernel_size-1)//2]*4
 
-            if (scale > 0):
+            if scale > 0:
                 ref = F.conv2d(F.pad(ref, pad_size, mode='reflect'), weight=win, stride=2)
                 dist = F.conv2d(F.pad(dist, pad_size, mode='reflect'), weight=win, stride=2)
                 w = w//2

@@ -18,12 +18,12 @@ class SVMPredict(torch.nn.Module):
 
     def forward(self, x):
         # normalize
-        x = self.slopes * x + self.intercepts
+        x = self.slopes * x + self.intercepts                                            # [batch_size, num_features]
 
         # svm predict
         x = x.reshape((-1, 1, self.num_features))  # make x broadcastable with support_vectors tensor
-        k = torch.exp(-self.gamma*torch.sum((x - self.support_vectors)**2, dim=-1))  # K(x_i, x)
-        s = torch.sum(self.alpha * k, dim=-1, keepdim=True)                          # \sigma_i \alpha_i K(x_i,x)
+        k = torch.exp(-self.gamma*torch.sum((x - self.support_vectors)**2, dim=-1))      # K(x_i, x)
+        s = torch.sum(self.alpha * k, dim=-1, keepdim=True)                              # \sigma_i \alpha_i K(x_i,x)
         pred = s - self.rho
 
         # denormalize
@@ -36,7 +36,9 @@ class SVMPredict(torch.nn.Module):
         return pred
 
     def get_model_from_json(self, model_json_path):
-        '''Load parameters for VMAF model from json file e.g. one of the files from https://github.com/Netflix/vmaf/tree/master/model'''
+        '''Load parameters for VMAF model from json file e.g. one of the files from https://github.com/Netflix/vmaf/tree/master/model
+        (not guaranteed to work with every model since they have slightly different formats)
+        '''
 
         with open(model_json_path) as f:
             self.model_json = json.load(f)
@@ -68,18 +70,15 @@ class SVMPredict(torch.nn.Module):
             sv_dict = {**zero_dict, **sv_dict}  # update missing values with zeros
             sv.append(np.array(list(sv_dict.values())))
 
-        alpha = torch.tensor(np.stack(alpha)).to(torch.float32)                #[211,]
+        alpha = torch.tensor(np.stack(alpha)).to(torch.float32)                          # [211,]
         self.register_buffer('alpha', alpha)
 
-        support_vectors = torch.tensor(np.stack(sv)).to(torch.float32)         #[211, 6]
+        support_vectors = torch.tensor(np.stack(sv)).to(torch.float32)                   # [211, 6]
         self.num_features = support_vectors.shape[1]
         self.register_buffer('support_vectors', support_vectors)
 
     def get_default_model(self):
-        '''Load parameters of default VMAF SVM model corresponding to https://github.com/Netflix/vmaf/blob/master/model/vmaf_v0.6.1.json
-        (not guaranteed to work with every model since they have slightly different formats)
-
-        '''
+        '''Load parameters of default VMAF SVM model corresponding to https://github.com/Netflix/vmaf/blob/master/model/vmaf_v0.6.1.json'''
 
         self.num_features = 6
         self.num_sv = 211
