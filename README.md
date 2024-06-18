@@ -1,4 +1,8 @@
 ## VMAF PyTorch
+
+
+Kirill Aistov, Maxim Koroteev
+
 This is an (unofficial) PyTorch implementation of VMAF (Video Multi-Method Assessment Fusion) video quality metric based on [the official C implementation](https://github.com/Netflix/vmaf).
 
 ## Installation
@@ -60,7 +64,7 @@ To reproduce these numbers see `vmaf_compare_implementations.ipynb`
 
 ## Notes
 
-* To ensure that gradients are computed correctly we perform gradient checking, see `vmaf_gradient_checking.ipynb`. For details refer to the paper.
+* To ensure that gradients are computed correctly we perform gradient checking, see `vmaf_gradient_checking.ipynb`. For details refer to the arxiv paper.
 
 * Note that with `clip_score=True` (which is the default behaviour of official VMAF implementation) it is possible to get gradients equal to 0 in some cases since clipping operation has derivative equal to 0 on parts of its domain. We recommend setting `clip_score=False` for tasks requiring gradient computation.
 
