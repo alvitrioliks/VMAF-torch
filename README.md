@@ -48,7 +48,7 @@ vmaf.compute_motion(ref)
 
 We tried to reproduce all details of the original implementation, however some difference in outputs is possible due to the fact that the original uses quantized integer values and this implementation uses floats.
 
-Comparing with [the official Netflix implementation](https://github.com/Netflix/vmaf) on [Netflix Public Dataset](https://github.com/Netflix/vmaf/blob/master/resource/doc/datasets.md) that includes 79 video streams (using first 50 frames from each video): 
+Comparing with [the official Netflix implementation](https://github.com/Netflix/vmaf) on [Netflix Public Dataset](https://github.com/Netflix/vmaf/blob/master/resource/doc/datasets.md) that includes 79 video streams (using first 50 frames from each video), so the plot below contains 79 points, each obtained by averaging over 50 numbers: 
 
 ![Comparison](score_comparison.png)
 ![Difference](score_difference.png)
