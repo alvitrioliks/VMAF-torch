@@ -70,7 +70,7 @@ To reproduce these numbers see `vmaf_compare_implementations.ipynb`
 If you use this implementation in your project, please, use the following reference:
 
 ```
-@misc{aistov2023vmaf,
+@misc{vmaf-torch,
       title={VMAF Re-implementation on PyTorch: Some Experimental Results}, 
       author={Kirill Aistov and Maxim Koroteev},
       year={2023},
