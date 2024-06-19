@@ -27,7 +27,7 @@ class Motion(torch.nn.Module):
         ref_blur = F.conv2d(x_padded, weight=self.blur_win)
         motion = torch.mean(torch.abs(ref_blur-torch.roll(ref_blur, 1, self.frame_dim)), dim=(-1, -2))
         motion[0] = 0
-        return motion             # [num_frames, 1]
+        return motion             # [batch_size, 1]
 
     def motion2(self, x):
         # min( SAD(frame(i),frame(i-1)) , SAD(frame(i),frame(i+1)) )
@@ -41,4 +41,4 @@ class Motion(torch.nn.Module):
         motion2 = torch.minimum(motion_i_minus_1, motion_i_plus_1)
         motion2[0] = 0
         motion2[-1] = motion_i_minus_1[-1]
-        return motion2            # [num_frames, 1]
+        return motion2            # [batch_size, 1]

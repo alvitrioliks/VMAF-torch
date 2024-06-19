@@ -1,4 +1,8 @@
 ## VMAF PyTorch
+
+
+Kirill Aistov, Maxim Koroteev
+
 This is an (unofficial) PyTorch implementation of VMAF (Video Multi-Method Assessment Fusion) video quality metric based on [the official C implementation](https://github.com/Netflix/vmaf).
 
 ## Installation
@@ -14,7 +18,7 @@ Initialize
 from vmaf_torch import VMAF
 vmaf = VMAF()                            # init vmaf class
 vmaf = vmaf.to(device)                   # move internal tensors to GPU
-vmaf = vmaf.compile()                    # optionally use .compile() for ~15-20% inference speed up, requires torch>=2.0, first pass might take ~30 seconds
+vmaf = vmaf.compile()                    # optionally use .compile() for up to 30% inference speed up, requires torch>=2.0, first pass might take ~30 seconds
 ```
 Load yuv files
 ```
@@ -44,7 +48,7 @@ vmaf.compute_motion(ref)
 
 We tried to reproduce all details of the original implementation, however some difference in outputs is possible due to the fact that the original uses quantized integer values and this implementation uses floats.
 
-Comparing with [the official Netflix implementation](https://github.com/Netflix/vmaf) on [Netflix Public Dataset](https://github.com/Netflix/vmaf/blob/master/resource/doc/datasets.md) that includes 79 video streams (using first 50 frames from each video): 
+Comparing with [the official Netflix implementation](https://github.com/Netflix/vmaf) on [Netflix Public Dataset](https://github.com/Netflix/vmaf/blob/master/resource/doc/datasets.md) that includes 79 video streams (using first 50 frames from each video), so the plot below contains 79 points, each obtained by averaging over 50 numbers: 
 
 ![Comparison](score_comparison.png)
 ![Difference](score_difference.png)
@@ -60,7 +64,7 @@ To reproduce these numbers see `vmaf_compare_implementations.ipynb`
 
 ## Notes
 
-* To ensure that gradients are computed correctly we perform gradient checking, see `vmaf_gradient_checking.ipynb`. For details refer to the paper.
+* To ensure that gradients are computed correctly we perform gradient checking, see `vmaf_gradient_checking.ipynb`. For details refer to the arxiv paper.
 
 * Note that with `clip_score=True` (which is the default behaviour of official VMAF implementation) it is possible to get gradients equal to 0 in some cases since clipping operation has derivative equal to 0 on parts of its domain. We recommend setting `clip_score=False` for tasks requiring gradient computation.
 
@@ -70,7 +74,7 @@ To reproduce these numbers see `vmaf_compare_implementations.ipynb`
 If you use this implementation in your project, please, use the following reference:
 
 ```
-@misc{aistov2023vmaf,
+@misc{vmaf-torch,
       title={VMAF Re-implementation on PyTorch: Some Experimental Results}, 
       author={Kirill Aistov and Maxim Koroteev},
       year={2023},
