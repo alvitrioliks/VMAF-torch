@@ -14,7 +14,7 @@ Todo:
 
 import torch
 import torch.nn.functional as F
-from .utils import gaussian_kernel
+from .utils import gaussian_kernel_1d, fast_gaussian_blur
 
 
 class VIF(torch.nn.Module):
@@ -34,7 +34,7 @@ class VIF(torch.nn.Module):
         self.blur_windows = torch.nn.ParameterList()
         for scale in self.scales:
             N = pow(2, 4 - scale) + 1
-            win = gaussian_kernel(kernel_size=N, sigma=N/5)
+            win = gaussian_kernel_1d(kernel_size=N, sigma=N/5)
             self.blur_windows.append(torch.nn.Parameter(win, requires_grad=False))  # using parameters instead of buffers because there is no BufferList
 
     def forward(self, ref, dist):
@@ -76,32 +76,26 @@ class VIF(torch.nn.Module):
             pad_size = [(kernel_size-1)//2]*4
 
             if scale > 0:
-                ref = F.conv2d(F.pad(ref, pad_size, mode='reflect'), weight=win, stride=2)
-                dist = F.conv2d(F.pad(dist, pad_size, mode='reflect'), weight=win, stride=2)
+                # pad size to ensure that width_new = floor(width/2), height_new = floor(height/2)
+                pad_size_downscale = [(kernel_size-1)//2,
+                                      (kernel_size-1)//2-1 if w % 2 == 1 else (kernel_size-1)//2,
+                                      (kernel_size-1)//2,
+                                      (kernel_size-1)//2-1 if h % 2 == 1 else (kernel_size-1)//2
+                                      ]
+
+                ref = fast_gaussian_blur(F.pad(ref, pad_size_downscale, mode='reflect'), weight=win, stride=2)
+                dist = fast_gaussian_blur(F.pad(dist, pad_size_downscale, mode='reflect'), weight=win, stride=2)
                 w = w//2
                 h = h//2
-                ref = ref[:, :, :h, :w]
-                dist = dist[:, :, :h, :w]
 
-            # this is the slowest part of VMAF
-            # mu1 = F.conv2d(F.pad(ref, pad_size, mode='reflect'), weight=win)
-            # mu2 = F.conv2d(F.pad(dist, pad_size, mode='reflect'), weight=win)
-            # mu1_sq = mu1 * mu1
-            # mu2_sq = mu2 * mu2
-            # mu1_mu2 = mu1 * mu2
-            # sigma1_sq = F.conv2d(F.pad(ref**2, pad_size, mode='reflect'), weight=win) - mu1_sq
-            # sigma2_sq = F.conv2d(F.pad(dist**2, pad_size, mode='reflect'), weight=win) - mu2_sq
-            # sigma12 = F.conv2d(F.pad(ref*dist, pad_size, mode='reflect'), weight=win) - mu1_mu2
-
-            # same as commented code above but ~2x faster on cpu, slightly faster on gpu
-            win_ = torch.cat([win]*5, dim=0)
-            input_ = torch.cat([ref, dist, ref**2, dist**2, ref*dist,], dim=1)
-            input_ = F.pad(input_, pad_size, mode='reflect')
-            output_ = F.conv2d(input_, win_, groups=5)
-            mu1, mu2, sigma1_sq, sigma2_sq, sigma12 = [t.unsqueeze(1) for t in torch.unbind(output_, dim=1)]
-            sigma1_sq = sigma1_sq - mu1**2
-            sigma2_sq = sigma2_sq - mu2**2
-            sigma12 = sigma12 - mu1*mu2
+            mu1 = fast_gaussian_blur(F.pad(ref, pad_size, mode='reflect'), win)
+            mu2 = fast_gaussian_blur(F.pad(dist, pad_size, mode='reflect'), win)
+            mu1_sq = mu1 * mu1
+            mu2_sq = mu2 * mu2
+            mu1_mu2 = mu1 * mu2
+            sigma1_sq = fast_gaussian_blur(F.pad(ref**2, pad_size, mode='reflect'), win) - mu1_sq
+            sigma2_sq = fast_gaussian_blur(F.pad(dist**2, pad_size, mode='reflect'), win) - mu2_sq
+            sigma12 = fast_gaussian_blur(F.pad(ref*dist, pad_size, mode='reflect'), win) - mu1_mu2
 
             sigma1_sq = F.relu(sigma1_sq)
             sigma2_sq = F.relu(sigma2_sq)

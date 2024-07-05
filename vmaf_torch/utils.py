@@ -7,17 +7,17 @@ import subprocess
 
 
 def gaussian_kernel_1d(kernel_size, sigma=1):
-    
+
     # corresponds to matlab fspecial('gaussian',hsize,sigma)
     x = torch.arange(-(kernel_size//2), kernel_size//2+1)
     gauss = torch.exp(-(x**2 / (2.0 * sigma**2)))
     gauss = gauss/gauss.sum()
-    
+
     return gauss
 
 
 def gaussian_kernel(kernel_size, sigma=1):
-    
+
     x, y = torch.meshgrid(torch.arange(-(kernel_size//2), kernel_size//2+1),
                           torch.arange(-(kernel_size//2), kernel_size//2+1),
                           indexing='ij')
@@ -25,13 +25,13 @@ def gaussian_kernel(kernel_size, sigma=1):
     gauss = torch.exp(-(dst / (2.0 * sigma**2)))
     gauss = gauss/gauss.sum()
     gauss = gauss.reshape((1, 1, kernel_size, kernel_size))
-    
+
     return gauss
 
 
 def vmaf_pad(input, pad):
     '''Pad image using padding mode: dcb|abcdef|fed - same as in VMAF C code'''
-    
+
     padding_left, padding_right, padding_top, padding_bottom = pad
     w = input.shape[-1]
     h = input.shape[-2]
@@ -53,8 +53,18 @@ def vmaf_pad(input, pad):
             padded = torch.cat((padded[:, :, :h, :], padded[:, :, h-1:h, :], padded[:, :, h:, :]), dim=-2)
         # pad top
         padded = F.pad(padded, (0, 0, padding_top, 0), mode='reflect')
-    
+
     return padded
+
+
+def fast_gaussian_blur(x, weight, stride=1):
+    '''Fast gaussian blur using separable filter
+
+    Args:
+        x: input image of shape (b,1,h,w)
+        weight: 1d gaussian kernel of shape (1,1,1,kernel_size)
+    '''
+    return F.conv2d(F.conv2d(x, weight.view(1, 1, 1, -1), stride=(1, stride)), weight.view(1, 1, -1, 1), stride=(stride, 1))
 
 
 def yuv_to_tensor(yuv_path, width, height, num_frames, channel='y'):
@@ -114,13 +124,13 @@ class VMAF_C():
         if self.verbose:
             print('Reading:', vmaf_out_csv_path)
         df = pd.read_csv(vmaf_out_csv_path)
-        
+
         return df
 
     def score_from_path(self, ref_path, dist_path, width, height, num_frames):
         df = self.table_from_path(ref_path, dist_path, width, height, num_frames)
         score = df['vmaf'].iloc[:num_frames].mean()
-        
+
         return score
 
     def table_from_tensors(self, ref_tup, dist_tup):
@@ -134,11 +144,11 @@ class VMAF_C():
             print('Saving tensors to:', ref_save_path, 'and', dist_save_path)
         tensor_to_yuv(*ref_tup, yuv_path=ref_save_path)
         tensor_to_yuv(*dist_tup, yuv_path=dist_save_path)
-        
+
         return self.table_from_path(ref_save_path, dist_save_path, width, height, num_frames)
 
     def score_from_tensors(self, ref_tup, dist_tup):
         df = self.table_from_tensors(ref_tup, dist_tup)
         score = df['vmaf'].mean()
-        
+
         return score

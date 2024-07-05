@@ -23,7 +23,7 @@ class VMAF(torch.nn.Module):
     Args:
         temporal_pooling (bool): if False output tensor of scores for each frame,
             if True output mean score computed over frame dimension, i.e. score for the whole video
-        enable_motion (bool): if False set motion for all frames to 0 e.g. when computing on batch of images instead of video 
+        enable_motion (bool): if False set motion for all frames to 0 e.g. when computing on batch of images instead of video
         clip_score (bool): if True clip final VMAF score to [0,100]
         NEG (bool): if True compute VMAF NEG version, if False compute regular VMAF
         model_json_path (str): path to custom SVM model json, if None default model is used
@@ -83,7 +83,7 @@ class VMAF(torch.nn.Module):
         return motion2_score, adm_score, vif_features, vmaf_score
 
     def compute_motion(self, ref):
-        """Compute motion feature"""        
+        """Compute motion feature"""
         if self.enable_motion:
             return self.motion.motion(ref)
         else:

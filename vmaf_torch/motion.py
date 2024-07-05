@@ -7,7 +7,7 @@ Based on:
 
 import torch
 import torch.nn.functional as F
-from .utils import gaussian_kernel, vmaf_pad
+from .utils import gaussian_kernel_1d, fast_gaussian_blur, vmaf_pad
 
 
 class Motion(torch.nn.Module):
@@ -15,7 +15,7 @@ class Motion(torch.nn.Module):
         super().__init__()
         self.frame_dim = 0
         self.kernel_size = 5
-        blur_win = gaussian_kernel(kernel_size=self.kernel_size)
+        blur_win = gaussian_kernel_1d(kernel_size=self.kernel_size)
         self.register_buffer('blur_win', blur_win)
 
     def forward(self, x):
@@ -24,7 +24,7 @@ class Motion(torch.nn.Module):
     def motion(self, x):
         # SAD(frame(i),frame(i-1))
         x_padded = vmaf_pad(x, [(self.kernel_size-1)//2]*4)
-        ref_blur = F.conv2d(x_padded, weight=self.blur_win)
+        ref_blur = fast_gaussian_blur(x_padded, weight=self.blur_win)
         motion = torch.mean(torch.abs(ref_blur-torch.roll(ref_blur, 1, self.frame_dim)), dim=(-1, -2))
         motion[0] = 0
         return motion             # [batch_size, 1]
@@ -32,7 +32,7 @@ class Motion(torch.nn.Module):
     def motion2(self, x):
         # min( SAD(frame(i),frame(i-1)) , SAD(frame(i),frame(i+1)) )
         x_padded = vmaf_pad(x, [(self.kernel_size-1)//2]*4)
-        ref_blur = F.conv2d(x_padded, weight=self.blur_win)
+        ref_blur = fast_gaussian_blur(x_padded, weight=self.blur_win)
         motion_i_minus_1 = torch.mean(torch.abs(ref_blur-torch.roll(ref_blur, 1, self.frame_dim)), dim=(-1, -2))
 
         # motion_minus1 = torch.mean(torch.abs(ref_blur-torch.roll(ref_blur, -1, self.frame_dim)), dim=(-1, -2))
