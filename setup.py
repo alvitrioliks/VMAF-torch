@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="vmaf_torch",
-    version="0.1",
+    version="1.0",
     url="https://github.com/alvitrioliks/VMAF-torch",
     author="Kirill Aistov",
     author_email="kirill.aistov1@huawei.com",
@@ -10,5 +10,5 @@ setup(
     packages=[
         "vmaf_torch",
     ],
-    install_requires=["torch>=1.0.0", "yuvio"],
+    install_requires=["torch>=2.0.0", "yuvio"],
 )
