@@ -7,7 +7,7 @@ This is an (unofficial) PyTorch implementation of VMAF (Video Multi-Method Asses
 
 ## Installation
 ```
-git clone https://rnd-gitlab-msc.huawei.com/cloud-bu-algorithm-common-project/multimedia-data-reduction/vmaf-torch
+git clone https://github.com/alvitrioliks/VMAF-torch
 cd vmaf-torch
 pip install -r requirements.txt
 python setup.py develop
@@ -46,7 +46,7 @@ vmaf.compute_motion(ref)
 
 ## Difference with the official implementation
 
-We tried to reproduce all details of the original implementation, however some difference in outputs is possible due to the fact that the original uses quantized integer values and this implementation uses floats.
+We tried to reproduce all details of the original implementation, however some difference in outputs is possible due to the fact that the original uses quantized integer values while this implementation uses floats.
 
 Comparing with [the official Netflix implementation](https://github.com/Netflix/vmaf) on [Netflix Public Dataset](https://github.com/Netflix/vmaf/blob/master/resource/doc/datasets.md) that includes 79 video streams (using first 50 frames from each video), so the plot below contains 79 points, each obtained by averaging over 50 numbers: 
 
@@ -64,9 +64,9 @@ To reproduce these numbers see `vmaf_compare_implementations.ipynb`
 
 ## Notes
 
-* To ensure that gradients are computed correctly we perform gradient checking, see `vmaf_gradient_checking.ipynb`. For details refer to the arxiv paper.
+* To ensure that gradients are computed correctly we perform gradient checking, see `vmaf_gradient_checking.ipynb`. For details refer to our arxiv paper.
 
-* Note that with `clip_score=True` (which is the default behaviour of official VMAF implementation) it is possible to get gradients equal to 0 in some cases since clipping operation has derivative equal to 0 on parts of its domain. We recommend setting `clip_score=False` for tasks requiring gradient computation.
+* Note that with `clip_score=True` (which is the default behaviour of the official VMAF implementation) it is possible to get gradients equal to 0 in some cases since clipping operation has derivative equal to 0 on parts of its domain. We recommend setting `clip_score=False` for tasks requiring gradient computation.
 
 * This implementation also includes [VMAF NEG](https://netflixtechblog.com/toward-a-better-quality-metric-for-the-video-community-7ed94e752a30) version of the algorithm, use `NEG=True` to enable it. We notice that with `NEG=True` it is also possible to get gradients equal to 0 in some cases due to the nature of this algorithm. We plan to investigate this in more detail in the future.
 
