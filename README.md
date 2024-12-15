@@ -5,9 +5,11 @@ Kirill Aistov, Maxim Koroteev
 
 This is an (unofficial) PyTorch implementation of VMAF (Video Multi-Method Assessment Fusion) video quality metric based on [the official C implementation](https://github.com/Netflix/vmaf).
 
+GitCode mirror: https://gitcode.com/huaweicloud/VMAF-torch
+
 ## Installation
 ```
-git clone https://github.com/alvitrioliks/VMAF-torch
+git clone https://github.com/alvitrioliks/VMAF-torch.git
 cd vmaf-torch
 pip install -r requirements.txt
 python setup.py develop
