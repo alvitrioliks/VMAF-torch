@@ -1,0 +1,25 @@
+[project]
+name = "vmaf-torch"
+version = "1.1.0"
+description = "VMAF implementation in PyTorch"
+readme = "README.md"
+authors = [
+  {name = "Kirill Aistov", email = "kirill.aistov1@huawei.com"},
+]
+license-files = ["LICEN[CS]E*"]
+keywords = ["VMAF", "PyTorch", "video quality assessment"]
+urls = {Homepage = "https://github.com/alvitrioliks/VMAF-torch"}
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "pandas",
+    "torch",
+    "yuvio",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["vmaf_torch*"]

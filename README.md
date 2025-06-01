@@ -5,21 +5,23 @@ Kirill Aistov, Maxim Koroteev
 
 This is an (unofficial) PyTorch implementation of VMAF (Video Multi-Method Assessment Fusion) video quality metric based on [the official C implementation](https://github.com/Netflix/vmaf).
 
-GitCode mirror: https://gitcode.com/huaweicloud/VMAF-torch
-
 ## Installation
+### From pip
+```
+pip install vmaf-torch
+```
+### From source
 ```
 git clone https://github.com/alvitrioliks/VMAF-torch.git
 cd vmaf-torch
-pip install -r requirements.txt
-python setup.py develop
+pip install -e .
 ```
 ## Usage
 Initialize
 ```
 from vmaf_torch import VMAF
 vmaf = VMAF()                            # init vmaf class
-vmaf = vmaf.to(device)                   # move internal tensors to GPU
+vmaf = vmaf.to("cuda")                   # move internal tensors to GPU
 vmaf = vmaf.compile()                    # optionally use .compile() for up to 30% inference speed up, requires torch>=2.0, first pass might take ~30 seconds
 ```
 Load yuv files
@@ -27,11 +29,11 @@ Load yuv files
 from vmaf_torch.utils import yuv_to_tensor  
 
 # load reference video Y channel as [num_frames,1,h,w] tensor in [0,255] range                  
-ref = yuv_to_tensor('BigBuckBunny_25fps.yuv', 1920, 1080, num_frames=50, channel='y')  
+ref = yuv_to_tensor('/<your path>/BigBuckBunny_25fps.yuv', 1920, 1080, num_frames=50, channel='y')  
 ref = ref.to(device)
 
 # load distorted video Y channel as [num_frames,1,h,w] tensor in [0,255] range
-dist = yuv_to_tensor('BigBuckBunny_20_288_375.yuv', 1920, 1080, num_frames=50, channel='y')  
+dist = yuv_to_tensor('/<your path>/BigBuckBunny_20_288_375.yuv', 1920, 1080, num_frames=50, channel='y')  
 dist = dist.to(device)
 ```
 
